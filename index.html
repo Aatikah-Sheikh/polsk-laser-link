@@ -100,6 +100,15 @@ footer a{color:var(--muted)}
   border:1.5px dashed var(--purple);color:var(--purple);font-size:26px;line-height:1;background:#1f2024;cursor:pointer}
 .th.up small{font-size:10px;margin-top:5px;color:var(--muted);text-align:center}
 @media (min-width:1500px) and (min-aspect-ratio:16/9){ .th.up span{width:74px;height:74px} }
+.upbig{display:inline-flex;align-items:center;gap:10px;margin-top:12px;padding:11px 22px;border-radius:999px;cursor:pointer;
+  border:1.5px dashed var(--purple);background:#24223a;color:var(--ink);font-weight:650;font-size:15px}
+.upbig b{font-size:20px;line-height:1;color:var(--purple)}
+.upbig small{font-weight:400;color:var(--muted);font-size:12px}
+body.qr .upbig{border-style:solid;background:linear-gradient(90deg,#3f5f9e,var(--purple-deep));color:#fff;font-size:17px;padding:14px 26px;animation:pulse 1.6s ease-in-out 4}
+body.qr .upbig b,body.qr .upbig small{color:#fff}
+@keyframes pulse{50%{box-shadow:0 0 0 8px rgba(157,143,224,.25)}}
+@media (prefers-reduced-motion:reduce){body.qr .upbig{animation:none}}
+@media (max-width:520px){.upbig{display:flex;justify-content:center}}
 </style>
 </head>
 <body>
@@ -110,6 +119,7 @@ footer a{color:var(--muted)}
   <header>
     <div class="kicker">Wits Optical Communication Lab · Project 26P83</div>
     <h1>Send a picture through our <span>laser link</span></h1>
+    <label class="upbig" id="upbig"><input type="file" accept="image/*" hidden><b>+</b> Upload your own photo <small>stays on your device</small></label>
   </header>
 
   <section class="stage">
@@ -219,7 +229,8 @@ function medianCut(px, n, k) {                      // RGBA pixels -> palette in
   return { idx, pal };
 }
 async function loadOwn(file) {
-  const url = URL.createObjectURL(file), img = new Image(); img.src = url; await img.decode();
+  const url = URL.createObjectURL(file), img = new Image();
+  await new Promise((ok, bad) => { img.onload = ok; img.onerror = () => bad(new Error("cannot read image")); img.src = url; });
   const w = img.naturalWidth, h = img.naturalHeight, s = 100 / Math.max(w, h);
   const fw = Math.max(1, Math.round(w * s)), fh = Math.max(1, Math.round(h * s));
   let src = img, cw = w, chh = h;                   // halve repeatedly for a clean downscale
@@ -337,7 +348,19 @@ $("#go").onclick = () => {
 (async () => {
   try {
     SYM = await gunzip(SYMBLOB); Q = Math.ceil(DATA.nsym / 4);
-    buildGallery(); addUploadTile(); reset(); $("#go").disabled = false; $("#loading").remove();
+    buildGallery(); addUploadTile(); reset();
+/* QR flow: big upload button; with ?upload the page highlights it and transmits as soon as the photo is ready */
+    const QR = new URLSearchParams(location.search).has("upload");
+    if (QR) document.body.classList.add("qr");
+    $("#upbig input").onchange = e => {
+      const f = e.target.files[0]; e.target.value = ""; if (!f || S.busy) return;
+      const tile = document.querySelector(".th.up input"), dt = new DataTransfer(); dt.items.add(f); tile.files = dt.files;
+      tile.dispatchEvent(new Event("change"));
+      if (QR) { const t0 = Date.now(); const wait = setInterval(() => {
+        const own = document.querySelector('#gallery [data-own="1"]');
+        if (own && DATA.pics[S.pic] && DATA.pics[S.pic].own && !S.busy) { clearInterval(wait); $("#go").scrollIntoView({ behavior: "smooth", block: "start" }); $("#go").click(); }
+        else if (Date.now() - t0 > 15000) clearInterval(wait); }, 150); }
+    }; $("#go").disabled = false; $("#loading").remove();
   } catch (e) { $("#loading").textContent = "Could not load the recordings: " + e.message; }
 })();
 </script>
