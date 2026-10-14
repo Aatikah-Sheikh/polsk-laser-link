@@ -110,11 +110,30 @@ body.qr .upbig b,body.qr .upbig small{color:#fff}
 @media (prefers-reduced-motion:reduce){body.qr .upbig{animation:none}}
 @media (max-width:520px){.upbig{display:flex;justify-content:center}}
 [hidden]{display:none!important}
-.qrbox{background:#fff;color:#002060;border-radius:14px;padding:14px 14px 12px;text-align:center}
-.qrbox .qrt{font-weight:750;font-size:17px;margin-bottom:8px}
-#qrcode{display:flex;justify-content:center;min-height:190px}
-#qrcode img,#qrcode canvas{width:190px;height:190px}
-#qrnote{font-size:12.5px;color:#334;margin-top:8px;line-height:1.4}
+/* the screen's QR: a little phone with the code on its display */
+body:not(.sender) .upbig,body:not(.sender) .th.up{display:none!important}
+.qrbox{position:fixed;right:18px;bottom:18px;z-index:4;width:250px;text-align:center;padding:24px 16px 12px;margin-top:14px;border-radius:22px;
+  background:linear-gradient(160deg,#25304f,#2c2648);border:1px solid #3e3a68;box-shadow:0 12px 34px rgba(0,0,0,.45)}
+.qrbox .bubble{position:absolute;top:-14px;left:50%;margin-left:-52px;width:104px;padding:6px 0;box-shadow:0 4px 12px rgba(0,0,0,.35);border-radius:999px;font-weight:750;font-size:14px;color:#fff;
+  background:linear-gradient(90deg,var(--polsk),var(--purple));animation:bob 2.4s ease-in-out infinite}
+.qrbox .bubble::after{content:"";position:absolute;left:50%;bottom:-6px;transform:translateX(-50%);border:6px solid transparent;border-top-color:#8a86d6;border-bottom:0}
+@keyframes bob{50%{transform:translateY(-4px) rotate(-2deg)}}
+.qrbox .phone{position:relative;width:188px;margin:4px auto 0;padding:24px 11px 16px;border-radius:28px;background:#0e0f13;
+  border:3px solid #4b5068;box-shadow:0 0 0 4px rgba(157,143,224,.10),0 0 28px rgba(127,140,230,.45)}
+.qrbox .notch{position:absolute;top:9px;left:50%;transform:translateX(-50%);width:48px;height:6px;border-radius:3px;background:#2b2e38}
+#qrcode{display:flex;justify-content:center;align-items:center;min-height:160px;padding:8px;border-radius:14px;background:#fff}
+#qrcode img,#qrcode canvas{width:144px;height:144px}
+.qrbox .qrt{margin-top:12px;font-weight:750;font-size:17px;line-height:1.25;color:var(--ink)}
+.qrbox .qrt span{background:linear-gradient(90deg,var(--polsk-ink),var(--purple));-webkit-background-clip:text;background-clip:text;color:transparent}
+#qrnote{margin-top:6px;font-size:12px;line-height:1.4;color:var(--muted)}
+@media (prefers-reduced-motion:reduce){.qrbox .bubble{animation:none}}
+@media (min-width:1500px) and (min-aspect-ratio:16/9){
+  .qrbox{position:relative;width:auto;margin:14px 0 2px;right:auto;bottom:auto}
+  .qrbox .phone{width:206px;padding:22px 12px 14px}
+  #qrcode{min-height:176px} #qrcode img,#qrcode canvas{width:160px;height:160px}
+  .qrbox .qrt{font-size:18px;margin-top:10px}
+  footer{gap:10px;font-size:12.5px;line-height:1.45}
+}
 body.sender #gallery,body.sender .stage,body.sender footer{display:none!important}
 body.sender .wrap{max-width:520px}
 body.sender header{display:block}
@@ -159,11 +178,11 @@ body.sender .upbig{display:flex;justify-content:center;font-size:18px;padding:16
   </section>
 
   <footer>
-    <div class="qrbox" id="qrbox" hidden><div class="qrt">Send your own photo</div><div id="qrcode"></div><div id="qrnote">Starting…</div></div>
+    <div class="qrbox" id="qrbox" hidden><div class="bubble">Scan me!</div><div class="phone"><div class="notch"></div><div id="qrcode"></div></div><div class="qrt">Send <span>your photo</span><br>through our laser</div><div id="qrnote">Starting…</div></div>
     <div><b>How it works.</b> Each picture is cut to a centred square of 100 × 100 pixels: one 4-level symbol per pixel in black &amp; white, three in colour (64 colours).
       Every wrong pixel is a real decision our receiver made on the lab bench: PolSK-4 and ASK-4 were recorded through the identical emulated
       turbulence at 10 MBd, and each Transmit replays one matched pair of recordings at the chosen strength from a random starting point.
-      Pixels arrive in the order they are sent; yellow marks an error as it lands. Tap “+ Your photo” to send your own picture: it is processed on your device and never uploaded.</div>
+      Pixels arrive in the order they are sent; yellow marks an error as it lands. Scan the QR code to send your own photo from your phone: it goes straight to this screen and is never stored.</div>
     <div><b>Why polarisation wins.</b> A turbulent fade dims the whole beam. Brightness levels (ASK) get confused, but the
       <i>ratio</i> between the two polarisations (PolSK) barely changes.</div>
     <div id="credits"></div>
@@ -331,8 +350,8 @@ async function startScreen() {
   catch (e) { try { peer = await open(fresh()); } catch (e2) { note.textContent = "Could not start phone sending (" + (e2.type || e2.message) + "). Reload to try again."; return; } }
   try { localStorage.setItem("polskPeer", peer.id); } catch (e) {}
   const url = location.origin + location.pathname + "?send=" + encodeURIComponent(peer.id);
-  $("#qrcode").innerHTML = ""; new QRCode($("#qrcode"), { text: url, width: 190, height: 190, colorDark: "#002060", colorLight: "#ffffff", correctLevel: QRCode.CorrectLevel.M });
-  note.textContent = "Scan with your phone camera, then choose or take a photo. It appears here and goes through the link.";
+  $("#qrcode").innerHTML = ""; new QRCode($("#qrcode"), { text: url, width: 160, height: 160, colorDark: "#002060", colorLight: "#ffffff", correctLevel: QRCode.CorrectLevel.M });
+  note.textContent = "Point your phone camera here, pick a photo, and watch it arrive on this screen.";
   peer.on("connection", conn => conn.on("data", m => {
     if (!m || m.type !== "photo") return;
     const p = cleanPic(m.pic); if (!p) { conn.send({ type: "status", text: "Sorry, that photo could not be used. Try another one." }); return; }
